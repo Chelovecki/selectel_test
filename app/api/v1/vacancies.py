@@ -52,7 +52,7 @@ async def create_vacancy_endpoint(
                 status_code=status.HTTP_200_OK,
                 content={"detail": "Vacancy with external_id already exists"},
             )
-    return await create_vacancy(session, payload)
+    return VacancyRead.model_validate(await create_vacancy(session, payload))
 
 
 @router.put("/{vacancy_id}", response_model=VacancyRead)
@@ -65,7 +65,8 @@ async def update_vacancy_endpoint(
     if not vacancy:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    return await update_vacancy(session, vacancy, payload)
+        
+    return VacancyRead.model_validate(await update_vacancy(session, vacancy, payload))
 
 
 @router.delete("/{vacancy_id}", status_code=status.HTTP_204_NO_CONTENT)
