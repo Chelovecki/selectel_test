@@ -4,6 +4,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import async_session_maker
+from app.exceptions import VacancyExternalIdExistsError
 from app.models.vacancy import Vacancy
 from app.schemas.vacancy import VacancyCreate, VacancyUpdate
 
@@ -11,7 +12,8 @@ from app.schemas.vacancy import VacancyCreate, VacancyUpdate
 async def get_session() -> AsyncSession:
     async with async_session_maker() as session:
         yield session
-        
+
+
 async def get_vacancy(session: AsyncSession, vacancy_id: int) -> Optional[Vacancy]:
     result = await session.execute(select(Vacancy).where(Vacancy.id == vacancy_id))
     return result.scalar_one_or_none()
@@ -33,7 +35,8 @@ async def list_vacancies(
 ) -> List[Vacancy]:
     stmt: Select = select(Vacancy)
     if timetable_mode_name:
-        stmt = stmt.where(Vacancy.timetable_mode_name.ilike(f"%{timetable_mode_name}%"))
+        stmt = stmt.where(Vacancy.timetable_mode_name.ilike(
+            f"%{timetable_mode_name}%"))
     if city_name:
         stmt = stmt.where(Vacancy.city_name.ilike(f"%{city_name}%"))
     stmt = stmt.order_by(Vacancy.published_at.desc())
@@ -53,6 +56,13 @@ async def update_vacancy(
     session: AsyncSession, vacancy: Vacancy, data: VacancyUpdate
 ) -> Vacancy:
     for field, value in data.model_dump().items():
+        if field == "external_id":
+            stmt = select(Vacancy).where(Vacancy.external_id == value)
+            res = await session.execute(stmt)
+            res = res.scalar_one_or_none()
+            if res is not None:
+                raise VacancyExternalIdExistsError(external_id=value)
+
         setattr(vacancy, field, value)
     await session.commit()
     await session.refresh(vacancy)
@@ -67,10 +77,12 @@ async def delete_vacancy(session: AsyncSession, vacancy: Vacancy) -> None:
 async def upsert_external_vacancies(
     session: AsyncSession, payloads: Iterable[dict]
 ) -> int:
-    external_ids = [payload["external_id"] for payload in payloads if payload["external_id"]]
+    external_ids = [payload["external_id"]
+                    for payload in payloads if payload["external_id"]]
     if external_ids:
         existing_result = await session.execute(
-            select(Vacancy.external_id).where(Vacancy.external_id.in_(external_ids))
+            select(Vacancy.external_id).where(
+                Vacancy.external_id.in_(external_ids))
         )
         existing_ids = set(existing_result.scalars().all())
     else:

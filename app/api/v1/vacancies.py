@@ -14,6 +14,8 @@ from app.crud.vacancy import (
     update_vacancy,
 )
 from app.schemas.vacancy import VacancyCreate, VacancyRead, VacancyUpdate
+from app.constants import VACANCY_EXTERNAL_ID_EXISTS_RESPONSE
+
 
 router = APIRouter(prefix="/vacancies", tags=["vacancies"])
 
@@ -55,7 +57,11 @@ async def create_vacancy_endpoint(
     return VacancyRead.model_validate(await create_vacancy(session, payload))
 
 
-@router.put("/{vacancy_id}", response_model=VacancyRead)
+@router.put(
+    "/{vacancy_id}", 
+    response_model=VacancyRead, 
+    responses={**VACANCY_EXTERNAL_ID_EXISTS_RESPONSE}
+)
 async def update_vacancy_endpoint(
     vacancy_id: int,
     payload: VacancyUpdate,
@@ -65,7 +71,7 @@ async def update_vacancy_endpoint(
     if not vacancy:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-        
+
     return VacancyRead.model_validate(await update_vacancy(session, vacancy, payload))
 
 
