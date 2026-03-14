@@ -1,6 +1,8 @@
 import logging
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.concurrency import asynccontextmanager
 
 from app.api.v1.router import api_router
 from app.core.logging import setup_logging
@@ -26,17 +28,19 @@ async def _run_parse_job() -> None:
         logger.exception("Ошибка фонового парсинга: %s", exc)
 
 
-@app.on_event("startup")
-async def on_startup() -> None:
+
+        
+        
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Запуск приложения")
     await _run_parse_job()
     global _scheduler
     _scheduler = create_scheduler(_run_parse_job)
     _scheduler.start()
 
+    yield # возвращаем управление FastAPI
 
-@app.on_event("shutdown")
-async def on_shutdown() -> None:
     logger.info("Остановка приложения")
     if _scheduler:
         _scheduler.shutdown(wait=False)
