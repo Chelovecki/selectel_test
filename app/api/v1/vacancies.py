@@ -18,16 +18,16 @@ from app.schemas.vacancy import VacancyCreate, VacancyRead, VacancyUpdate
 router = APIRouter(prefix="/vacancies", tags=["vacancies"])
 
 
-
-
-
 @router.get("/", response_model=List[VacancyRead])
 async def list_vacancies_endpoint(
     timetable_mode_name: Optional[str] = None,
     city: Optional[str] = None,
     session: AsyncSession = Depends(get_session),
 ) -> List[VacancyRead]:
-    return await list_vacancies(session, timetable_mode_name, city)
+    return [
+        VacancyRead.model_validate(vacancy)
+        for vacancy in await list_vacancies(session, timetable_mode_name, city)
+    ]
 
 
 @router.get("/{vacancy_id}", response_model=VacancyRead)
@@ -36,7 +36,8 @@ async def get_vacancy_endpoint(
 ) -> VacancyRead:
     vacancy = await get_vacancy(session, vacancy_id)
     if not vacancy:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return vacancy
 
 
@@ -62,7 +63,8 @@ async def update_vacancy_endpoint(
 ) -> VacancyRead:
     vacancy = await get_vacancy(session, vacancy_id)
     if not vacancy:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return await update_vacancy(session, vacancy, payload)
 
 
@@ -72,5 +74,6 @@ async def delete_vacancy_endpoint(
 ) -> None:
     vacancy = await get_vacancy(session, vacancy_id)
     if not vacancy:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     await delete_vacancy(session, vacancy)
