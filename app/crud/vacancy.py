@@ -3,10 +3,15 @@ from typing import Iterable, List, Optional
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.session import async_session_maker
 from app.models.vacancy import Vacancy
 from app.schemas.vacancy import VacancyCreate, VacancyUpdate
 
 
+async def get_session() -> AsyncSession:
+    async with async_session_maker() as session:
+        yield session
+        
 async def get_vacancy(session: AsyncSession, vacancy_id: int) -> Optional[Vacancy]:
     result = await session.execute(select(Vacancy).where(Vacancy.id == vacancy_id))
     return result.scalar_one_or_none()

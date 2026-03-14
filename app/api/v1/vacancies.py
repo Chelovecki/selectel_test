@@ -7,20 +7,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.vacancy import (
     create_vacancy,
     delete_vacancy,
+    get_session,
     get_vacancy,
     get_vacancy_by_external_id,
     list_vacancies,
     update_vacancy,
 )
-from app.db.session import async_session_maker
 from app.schemas.vacancy import VacancyCreate, VacancyRead, VacancyUpdate
 
 router = APIRouter(prefix="/vacancies", tags=["vacancies"])
 
 
-async def get_session() -> AsyncSession:
-    async with async_session_maker() as session:
-        yield session
+
 
 
 @router.get("/", response_model=List[VacancyRead])
