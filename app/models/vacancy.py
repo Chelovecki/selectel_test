@@ -1,15 +1,19 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String, UniqueConstraint, func
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.db.base import Base
 
 
 class Vacancy(Base):
     __tablename__ = "vacancies"
-    __table_args__ = (UniqueConstraint(
-        "external_id", name="uq_vacancies_external_id"),)
+    __table_args__ = (
+        UniqueConstraint("external_id",
+                         name="uq_vacancies_external_id"),
+        CheckConstraint('external_id IS NULL OR external_id >= 0',
+                        name='ck_vacancies_external_id_positive'),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True)
@@ -29,3 +33,9 @@ class Vacancy(Base):
         server_default=func.current_timestamp(),
     )
     external_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    @validates('external_id')
+    def validate_external_id(self, key, value):
+        if value is not None and value < 0:
+            raise ValueError("external_id must be >= 0")
+        return value
