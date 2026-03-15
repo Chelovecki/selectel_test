@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
     log_level: str = "INFO"
-    parse_schedule_minutes: int = 5
+    parse_schedule_seconds: int = 300
 
 
 settings = Settings()
