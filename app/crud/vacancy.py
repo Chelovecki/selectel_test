@@ -82,21 +82,26 @@ async def delete_vacancy(session: AsyncSession, vacancy: Vacancy) -> None:
 async def upsert_external_vacancies(
     session: AsyncSession, payloads: Iterable[dict]
 ) -> int:
-    external_ids = [payload["external_id"]
-                    for payload in payloads if payload["external_id"]]
+    payloads = list(payloads)
+
+    external_ids = [
+        payload["external_id"]
+        for payload in payloads
+        if payload["external_id"] is not None
+    ]
+
     if external_ids:
         existing_result = await session.execute(
-            select(Vacancy.external_id).where(
-                Vacancy.external_id.in_(external_ids))
+            select(Vacancy.external_id).where(Vacancy.external_id.in_(external_ids))
         )
         existing_ids = set(existing_result.scalars().all())
     else:
-        existing_ids = {}
+        existing_ids = set()
 
     created_count = 0
     for payload in payloads:
         ext_id = payload["external_id"]
-        if ext_id and ext_id in existing_ids:
+        if ext_id is not None and ext_id in existing_ids:
             result = await session.execute(
                 select(Vacancy).where(Vacancy.external_id == ext_id)
             )
