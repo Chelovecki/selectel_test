@@ -69,7 +69,14 @@ async def update_vacancy(
                 raise VacancyExternalIdExistsError(external_id=value)
 
         setattr(vacancy, field, value)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        external_id = vacancy_data.get("external_id")
+        if external_id is not None:
+            raise VacancyExternalIdExistsError(external_id=external_id) from exc
+        raise
     await session.refresh(vacancy)
     return vacancy
 
