@@ -1,6 +1,7 @@
 # Selectel Vacancies API
 
 FastAPI-приложение для парсинга публичных вакансий Selectel, хранения в PostgreSQL и предоставления CRUD API.
+Отчет о выполненной работе находится [тут](https://disk.yandex.ru/i/qS0FKs6SjiDtsg)
 
 ## Быстрый старт
 
