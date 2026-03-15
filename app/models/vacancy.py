@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String, UniqueConstraint, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, Integer, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.db.base import Base
@@ -9,11 +9,15 @@ from app.db.base import Base
 class Vacancy(Base):
     __tablename__ = "vacancies"
     __table_args__ = (
-        UniqueConstraint("external_id",
-                         name="uq_vacancies_external_id"),
-        CheckConstraint('external_id IS NULL OR external_id >= 0',
-                        name='ck_vacancies_external_id_positive'),
+        Index('uq_vacancies_external_id',
+              'external_id',
+              unique=True,
+              postgresql_where=text("external_id IS NOT NULL")),  
+        CheckConstraint(
+            'external_id IS NULL OR external_id >= 0',
+            name='ck_vacancies_external_id_positive'),
     )
+    
 
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True)
