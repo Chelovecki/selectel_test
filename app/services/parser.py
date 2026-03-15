@@ -45,7 +45,9 @@ async def parse_and_store(session: AsyncSession) -> int:
                             "is_hot": item.is_hot,
                         }
                     )
-                created_count = await upsert_external_vacancies(session, parsed_payloads)
+                created_count = await upsert_external_vacancies(
+                    session, parsed_payloads
+                )
                 created_total += created_count
 
                 if page >= payload.page_count:

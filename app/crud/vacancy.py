@@ -1,7 +1,7 @@
-from typing import Iterable, List, Optional, AsyncGenerator
+from typing import AsyncGenerator, Iterable, List, Optional
 
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import Select, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import async_session_maker
@@ -20,9 +20,6 @@ async def get_vacancy(session: AsyncSession, vacancy_id: int) -> Optional[Vacanc
     return result.scalar_one_or_none()
 
 
-
-
-
 async def list_vacancies(
     session: AsyncSession,
     timetable_mode_name: Optional[str],
@@ -30,15 +27,12 @@ async def list_vacancies(
 ) -> List[Vacancy]:
     stmt: Select = select(Vacancy)
     if timetable_mode_name:
-        stmt = stmt.where(Vacancy.timetable_mode_name.ilike(
-            f"%{timetable_mode_name}%"))
+        stmt = stmt.where(Vacancy.timetable_mode_name.ilike(f"%{timetable_mode_name}%"))
     if city_name:
         stmt = stmt.where(Vacancy.city_name.ilike(f"%{city_name}%"))
     stmt = stmt.order_by(Vacancy.published_at.desc())
     result = await session.execute(stmt)
     return list(result.scalars().all())
-
-
 
 
 async def create_vacancy(session: AsyncSession, data: VacancyCreate) -> Vacancy:
@@ -53,7 +47,6 @@ async def create_vacancy(session: AsyncSession, data: VacancyCreate) -> Vacancy:
         raise
     await session.refresh(vacancy)
     return vacancy
-
 
 
 async def update_vacancy(

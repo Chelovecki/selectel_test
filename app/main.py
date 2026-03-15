@@ -29,14 +29,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if _scheduler:
         _scheduler.shutdown(wait=False)
 
+
 app = FastAPI(title="Selectel Vacancies API", lifespan=lifespan)
 
 # подключение роутеров
 app.include_router(api_router)
 
 # подключение обработчика исключений
-app.add_exception_handler(VacancyExternalIdExistsError,
-                          vacancy_external_id_exists_handler)
+app.add_exception_handler(
+    VacancyExternalIdExistsError, vacancy_external_id_exists_handler
+)
 
 setup_logging()
 

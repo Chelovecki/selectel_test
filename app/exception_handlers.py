@@ -4,7 +4,9 @@ from fastapi.responses import JSONResponse
 from app.exceptions import VacancyExternalIdExistsError
 
 
-async def vacancy_external_id_exists_handler(request: Request, exc: VacancyExternalIdExistsError):
+async def vacancy_external_id_exists_handler(
+    request: Request, exc: VacancyExternalIdExistsError
+):
     return JSONResponse(
         status_code=409,
         content={
