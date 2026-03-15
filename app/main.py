@@ -14,27 +14,6 @@ from app.services.scheduler import create_scheduler
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Selectel Vacancies API")
-
-# подключение роутеров
-app.include_router(api_router)
-
-# подключение обработчика исключений 
-app.add_exception_handler(VacancyExternalIdExistsError,
-                          vacancy_external_id_exists_handler)
-
-setup_logging()
-
-_scheduler = None
-
-
-async def _run_parse_job() -> None:
-    try:
-        async with async_session_maker() as session:
-            await parse_and_store(session)
-    except Exception as exc:
-        logger.exception("Ошибка фонового парсинга: %s", exc)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -49,3 +28,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Остановка приложения")
     if _scheduler:
         _scheduler.shutdown(wait=False)
+
+app = FastAPI(title="Selectel Vacancies API", lifespan=lifespan)
+
+# подключение роутеров
+app.include_router(api_router)
+
+# подключение обработчика исключений
+app.add_exception_handler(VacancyExternalIdExistsError,
+                          vacancy_external_id_exists_handler)
+
+setup_logging()
+
+_scheduler = None
+
+
+async def _run_parse_job() -> None:
+    try:
+        async with async_session_maker() as session:
+            await parse_and_store(session)
+    except Exception as exc:
+        logger.exception("Ошибка фонового парсинга: %s", exc)
