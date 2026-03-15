@@ -55,12 +55,13 @@ async def create_vacancy(session: AsyncSession, data: VacancyCreate) -> Vacancy:
 async def update_vacancy(
     session: AsyncSession, vacancy: Vacancy, data: VacancyUpdate
 ) -> Vacancy:
-    for field, value in data.model_dump().items():
+    vacancy_data = data.model_dump()
+    for field, value in vacancy_data.items():
         if field == "external_id":
             stmt = select(Vacancy).where(Vacancy.external_id == value)
             res = await session.execute(stmt)
             res = res.scalar_one_or_none()
-            if res is not None:
+            if res is not None and res.id != vacancy.id:
                 raise VacancyExternalIdExistsError(external_id=value)
 
         setattr(vacancy, field, value)
