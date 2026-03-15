@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.vacancy import (
@@ -9,7 +8,6 @@ from app.crud.vacancy import (
     delete_vacancy,
     get_session,
     get_vacancy,
-    get_vacancy_by_external_id,
     list_vacancies,
     update_vacancy,
 )
@@ -43,23 +41,21 @@ async def get_vacancy_endpoint(
     return vacancy
 
 
-@router.post("/", response_model=VacancyRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=VacancyRead,
+    status_code=status.HTTP_201_CREATED,
+    responses={**VACANCY_EXTERNAL_ID_EXISTS_RESPONSE},
+)
 async def create_vacancy_endpoint(
     payload: VacancyCreate, session: AsyncSession = Depends(get_session)
 ) -> VacancyRead:
-    if payload.external_id is not None:
-        existing = await get_vacancy_by_external_id(session, payload.external_id)
-        if existing:
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content={"detail": "Vacancy with external_id already exists"},
-            )
     return VacancyRead.model_validate(await create_vacancy(session, payload))
 
 
 @router.put(
-    "/{vacancy_id}", 
-    response_model=VacancyRead, 
+    "/{vacancy_id}",
+    response_model=VacancyRead,
     responses={**VACANCY_EXTERNAL_ID_EXISTS_RESPONSE}
 )
 async def update_vacancy_endpoint(

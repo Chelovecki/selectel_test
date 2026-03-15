@@ -1,5 +1,6 @@
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, AsyncGenerator
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,7 @@ from app.models.vacancy import Vacancy
 from app.schemas.vacancy import VacancyCreate, VacancyUpdate
 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
 
@@ -19,13 +20,7 @@ async def get_vacancy(session: AsyncSession, vacancy_id: int) -> Optional[Vacanc
     return result.scalar_one_or_none()
 
 
-async def get_vacancy_by_external_id(
-    session: AsyncSession, external_id: int
-) -> Optional[Vacancy]:
-    result = await session.execute(
-        select(Vacancy).where(Vacancy.external_id == external_id)
-    )
-    return result.scalar_one_or_none()
+
 
 
 async def list_vacancies(
@@ -44,12 +39,21 @@ async def list_vacancies(
     return list(result.scalars().all())
 
 
+
+
 async def create_vacancy(session: AsyncSession, data: VacancyCreate) -> Vacancy:
     vacancy = Vacancy(**data.model_dump())
     session.add(vacancy)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        if data.external_id is not None:
+            raise VacancyExternalIdExistsError(external_id=data.external_id) from exc
+        raise
     await session.refresh(vacancy)
     return vacancy
+
 
 
 async def update_vacancy(

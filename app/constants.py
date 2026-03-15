@@ -1,7 +1,7 @@
 
 
 VACANCY_EXTERNAL_ID_EXISTS_RESPONSE = {
-    400: {
+    409: {
         "description": "Vacancy with this external_id already exists",
         "content": {
             "application/json": {
